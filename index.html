@@ -126,7 +126,7 @@
             <label for="year2">Anno finale:</label>
             <input type="number" id="year2" name="year2" placeholder="Es. 2023" required onchange=enforceMinMax(this)>
             
-            <button type="button" onclick="calculateInflation()">Calcola</button>
+            <button type="submit">Calcola</button>
         </form>
         <div id="result" class="result"></div>
     </div>
@@ -162,7 +162,21 @@
         });
     });
 
+    document.getElementById('inflationForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Previene l'invio del modulo
+        calculateInflation();
+    });
+
     async function calculateInflation() {
+        const year1 = parseInt(document.getElementById('year1').value);
+        const value1 = parseFloat(document.getElementById('value1').value);
+        const year2 = parseInt(document.getElementById('year2').value);
+
+        if (year1 >= year2) {
+            alert('L\'anno finale deve essere successivo all\'anno iniziale.');
+            return;
+        }
+
         const currentTime = Date.now(); // Ottieni il timestamp corrente
 
         // Controlla se è passato almeno un minuto dall'ultima esecuzione
@@ -173,18 +187,6 @@
         // Aggiorna il timestamp dell'ultima esecuzione
         lastCalculationTime = currentTime;
 
-        const year1 = parseInt(document.getElementById('year1').value);
-        const value1 = parseFloat(document.getElementById('value1').value);
-        const year2 = parseInt(document.getElementById('year2').value);
-
-        if (isNaN(year1) || isNaN(value1) || isNaN(year2)) {
-            alert('Per favore, inserisci valori validi.');
-            return;
-        }
-        if (year1 >= year2) {
-            alert('L\'anno finale deve essere successivo all\'anno iniziale.');
-            return;
-        }
 
         // Mostra la rondella di caricamento
         const resultElement = document.getElementById('result');
