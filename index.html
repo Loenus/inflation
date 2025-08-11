@@ -3,25 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <script>
-        async function callApi() {
-            try {
-                const response = await fetch('https://cors-anywhere.com/sdmx.istat.it/SDMXWS/rest/data/167_742/A.00.IT.4+8.40/?startPeriod=2020');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log(data);
-                alert('API chiamata con successo!');
-            } catch (error) {
-                console.error('Errore durante la chiamata API:', error);
-                alert('Errore durante la chiamata API.');
+    <title>Calcolatore Inflazione</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        label {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            display: block;
+            color: #34495e;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 30px;
+                max-width: 500px;
+            }
+
+            button {
+                font-size: 1.2rem;
+                padding: 12px 20px;
+            }
+
+            .result {
+                font-size: 1.5rem;
             }
         }
-    </script>
+
+        .loader {
+            border: 4px solid #f3f3f3; /* Colore di sfondo */
+            border-top: 4px solid #3498db; /* Colore della rondella */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body>
-    <button id="myButton" onclick="callApi()">Click Me!</button>
+    <div class="container">
+        <h1>Calcolatore Inflazione</h1>
+        <form id="inflationForm">
+            <label for="year1">Anno iniziale:</label>
+            <input type="number" id="year1" name="year1" placeholder="Es. 2020" required onchange=enforceMinMax(this)>
+            
+            <label for="value1">Valore in euro:</label>
+            <input type="number" id="value1" name="value1" placeholder="Es. 1000" required>
+            
+            <label for="year2">Anno finale:</label>
+            <input type="number" id="year2" name="year2" placeholder="Es. 2023" required onchange=enforceMinMax(this)>
+            
+            <button type="button" onclick="calculateInflation()">Calcola</button>
+        </form>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const currentYear = new Date().getFullYear();
+        let lastCalculationTime = 0; // Memorizza il timestamp dell'ultima esecuzione
+
+        function enforceMinMax(el) {
+            if (el.value != "") {
+                if (parseInt(el.value) < parseInt(el.min)) {
+                el.value = el.min;
+                }
+                if (parseInt(el.value) > parseInt(el.max)) {
+                el.value = el.max;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+        const year1Input = document.getElementById('year1');
+        const year2Input = document.getElementById('year2');
+
+        // Imposta i limiti iniziali
+        year1Input.setAttribute('min', '2015');
+        year1Input.setAttribute('max', currentYear);
+        year2Input.setAttribute('min', '2015');
+        year2Input.setAttribute('max', currentYear);
+
+        // Aggiorna il massimo di year1 in base al valore di year2
+        year2Input.addEventListener('input', () => {
+            year1Input.setAttribute('max', year2Input.value);
+        });
+    });
+
+    async function calculateInflation() {
+        const currentTime = Date.now(); // Ottieni il timestamp corrente
+
+        // Controlla se è passato almeno un minuto dall'ultima esecuzione
+        if (currentTime - lastCalculationTime < 60000) {
+            alert('Puoi calcolare l\'inflazione solo una volta al minuto.');
+            return;
+        }
+        // Aggiorna il timestamp dell'ultima esecuzione
+        lastCalculationTime = currentTime;
+
+        const year1 = parseInt(document.getElementById('year1').value);
+        const value1 = parseFloat(document.getElementById('value1').value);
+        const year2 = parseInt(document.getElementById('year2').value);
+
+        if (isNaN(year1) || isNaN(value1) || isNaN(year2)) {
+            alert('Per favore, inserisci valori validi.');
+            return;
+        }
+        if (year1 >= year2) {
+            alert('L\'anno finale deve essere successivo all\'anno iniziale.');
+            return;
+        }
+
+        // Mostra la rondella di caricamento
+        const resultElement = document.getElementById('result');
+        resultElement.innerHTML = '<div class="loader"></div>';
+
+        try {
+            const inflationRate = await callApi(year1, year2);
+            console.log(`Tasso di inflazione tra ${year1} e ${year2}: ${inflationRate} | value1: ${value1}`);
+            const value2 = value1 * inflationRate;
+            resultElement.innerHTML = `Nel ${year2}, il valore sarà di <span style="font-size: 1.5rem;">€${value2.toFixed(2)}</span>`;
+        } catch (error) {
+            resultElement.innerHTML = 'Errore durante il calcolo.';
+        }
+    }
+
+    async function callApi(year1, year2) {
+        try {
+            const response = await fetch(`https://cors-anywhere.com/sdmx.istat.it/SDMXWS/rest/data/167_742/A.00.IT.4.40/?startPeriod=${year1}&endPeriod=${year2}`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const INCdata = data.dataSets[0].series['0:0:0:0:0'].observations;
+            
+            // Recupera la chiave con l'indice maggiore
+            const keys = Object.keys(INCdata).map(key => parseInt(key)); // Converti le chiavi in numeri
+            const maxKey = Math.max(...keys); // Trova la chiave con il valore massimo
+            const maxObject = INCdata[maxKey]; // Recupera l'oggetto associato alla chiave massima
+            const minObject = INCdata[0];
+            const out = parseInt(maxObject[0]) / parseInt(minObject[0]);
+            console.log('Dati restituiti dall\'API:', INCdata);
+            console.log(`Valore anno ${year1}: ${minObject[0]} | Valore anno ${year2}: ${maxObject[0]} | Rapporto: ${out}`);
+            return out;
+        } catch (error) {
+            console.error('Errore durante la chiamata API:', error);
+        }
+    }
+    </script>
 </body>
 </html>
